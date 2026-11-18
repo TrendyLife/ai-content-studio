@@ -8,6 +8,9 @@ export default async function handler(req,res) {
   res.setHeader('Cache-Control','no-store');
   res.setHeader('Content-Type','application/json; charset=utf-8');
   if(req.method!=='POST') {res.setHeader('Allow','POST');return res.status(405).json({error:'Method not allowed'});}
+  // SECURITY: Fail closed until verified server-side identity and persistent quotas exist.
+  // A deployment flag or API key alone must never expose a billable public endpoint.
+  return res.status(503).json({error:'AI generation is unavailable until secure authentication and usage limits are implemented.'});
   if(!process.env.GEMINI_API_KEY) return res.status(503).json({error:'AI generation is not configured yet.'});
   // Do not expose an unmetered AI API to the public. This is a development-only gate.
   if(process.env.AI_STUDIO_GENERATION_ENABLED!=='true') return res.status(503).json({error:'AI generation is not enabled yet.'});
