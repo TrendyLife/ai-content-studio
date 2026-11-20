@@ -54,7 +54,7 @@ test('Auth is not enabled without Supabase public configuration', () => {
 
 
 test('inline browser JavaScript parses without syntax errors', () => {
-  const scripts = [...ui.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+  const scripts = [...ui.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
     .map(match => match[1]).filter(code => code.trim());
   assert.ok(scripts.length > 0, 'Expected an inline application script');
   for (const script of scripts) assert.doesNotThrow(() => new vm.Script(script));
