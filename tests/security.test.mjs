@@ -51,3 +51,18 @@ test('Auth is not enabled without Supabase public configuration', () => {
   assert.match(ui, /Account registration is not enabled yet/);
   assert.match(ui, /auth-signup'\)\.disabled=true/);
 });
+
+
+test('inline browser JavaScript parses without syntax errors', () => {
+  const scripts = [...ui.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)]
+    .map(match => match[1]).filter(code => code.trim());
+  assert.ok(scripts.length > 0, 'Expected an inline application script');
+  for (const script of scripts) assert.doesNotThrow(() => new vm.Script(script));
+});
+
+test('video planning keeps both input modes and does not call a paid renderer', () => {
+  assert.match(ui, /id="video-method"/);
+  assert.match(ui, /id="video-photo"/);
+  assert.match(ui, /id="video-output"/);
+  assert.match(ui, /does not generate an MP4/);
+});
