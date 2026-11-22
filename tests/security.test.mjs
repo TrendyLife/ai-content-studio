@@ -66,3 +66,17 @@ test('video planning keeps both input modes and does not call a paid renderer', 
   assert.match(ui, /id="video-output"/);
   assert.match(ui, /does not generate an MP4/);
 });
+
+
+test('saved drafts safely handle invalid browser storage shapes', () => {
+  const match = ui.match(/function saved\(\)\{[\s\S]*?\}\}/);
+  assert.ok(match, 'saved() helper exists');
+  for (const [raw, expected] of [
+    ['null', 0], ['{}', 0], ['not json', 0],
+    ['[null,3,{"type":"Draft","text":"ok"},{"type":"Bad"}]', 1]
+  ]) {
+    const sandbox = { localStorage: { getItem: () => raw } };
+    vm.runInNewContext(match[0] + ';result=saved()', sandbox);
+    assert.equal(sandbox.result.length, expected);
+  }
+});
