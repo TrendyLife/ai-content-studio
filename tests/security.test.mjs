@@ -80,3 +80,11 @@ test('saved drafts safely handle invalid browser storage shapes', () => {
     assert.equal(sandbox.result.length, expected);
   }
 });
+
+
+test('account controls stay disabled until real Supabase initialization', () => {
+  assert.match(ui, /id="auth-login" type="button" disabled/);
+  assert.match(ui, /id="auth-signup" type="button" disabled/);
+  assert.match(ui, /authClient\.auth\.onAuthStateChange\([\s\S]*?\$\('auth-login'\)\.disabled=false;\$\('auth-signup'\)\.disabled=false/);
+  assert.match(ui, /if\(!AUTH_CONFIG\.url\|\|!AUTH_CONFIG\.anonKey\)/);
+});
