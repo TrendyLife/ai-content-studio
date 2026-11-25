@@ -88,3 +88,32 @@ test('account controls stay disabled until real Supabase initialization', () => 
   assert.match(ui, /authClient\.auth\.onAuthStateChange\([\s\S]*?\$\('auth-login'\)\.disabled=false;\$\('auth-signup'\)\.disabled=false/);
   assert.match(ui, /if\(!AUTH_CONFIG\.url\|\|!AUTH_CONFIG\.anonKey\)/);
 });
+
+test('public configuration rejects privileged keys and invalid project URLs', () => {
+  const configSource = readFileSync(new URL('../api/public-config.js', import.meta.url), 'utf8');
+  const jwt = role => 'header.' + Buffer.from(JSON.stringify({role})).toString('base64url') + '.signature';
+  const run = (url, key, method = 'GET') => {
+    const ctx = { module: {exports:{}}, Buffer, process: {env:{SUPABASE_URL:url,SUPABASE_PUBLISHABLE_KEY:key}} };
+    vm.runInNewContext(configSource.replace('export default function handler', 'module.exports.handler = function handler'), ctx);
+    let status, payload;
+    const headers = {};
+    ctx.module.exports.handler({method}, {setHeader(k,v){headers[k]=v},status(n){status=n;return this},json(v){payload=v}});
+    return {status,payload,headers};
+  };
+  const url = 'https://example.supabase.co';
+  for (const key of ['sb_secret_example', jwt('service_role'), 'unknown', '']) {
+    const r = run(url,key);
+    assert.equal(r.payload.supabasePublishableKey,'');
+    assert.equal(r.payload.supabaseUrl,'');
+  }
+  for (const badUrl of ['http://example.supabase.co','https://example.supabase.co.evil.test','https://example.supabase.co/path']) {
+    assert.equal(run(badUrl,'sb_publishable_example').payload.supabaseUrl,'');
+  }
+  for (const key of ['sb_publishable_example',jwt('anon')]) {
+    const r = run(url,key);
+    assert.equal(r.status,200);
+    assert.equal(r.payload.supabasePublishableKey,key);
+    assert.equal(r.headers['Cache-Control'],'no-store');
+  }
+  assert.equal(run(url,'sb_publishable_example','POST').status,405);
+});
